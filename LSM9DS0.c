@@ -1,6 +1,5 @@
 #include "LSM9DS0.h"
 
-
 static void delay(volatile uint32_t wait )
 {
 	wait *= 100000UL;
@@ -23,7 +22,7 @@ void LSM9DS0_Init( LSM9DS0_t* lsm_t, interface_mode interface, uint8_t gAddr, ui
 {
 	// interfaceMode will keep track of whether we're using SPI or I2C:
 #if(LSM_I2C_SUPPORT==1)
-	lsm_t->interfaceMode= interface;
+	lsm_t->interfaceMode= MODE_I2C;
 #else
 	lsm_t->interfaceMode= MODE_SPI;
 #endif
@@ -66,22 +65,22 @@ uint16_t LSM9DS0_begin( LSM9DS0_t* lsm_t, LMS9DS0_Init_t* init_t )
 	gTest  = gReadByte(lsm_t,WHO_AM_I_G);		// Read the gyro WHO_AM_I
 	xmTest = xmReadByte(lsm_t,WHO_AM_I_XM);	// Read the accel/mag WHO_AM_I
 	
-	// Gyro initialization stuff:
+	// // Gyro initialization stuff:
 	initGyro(lsm_t);		// This will "turn on" the gyro. Setting up interrupts, etc.
 	setGyroODR(lsm_t,init_t->gODR); 		// Set the gyro output data rate and bandwidth.
 	setGyroScale(lsm_t,lsm_t->gScale); 	// Set the gyro range
 	
-	// Accelerometer initialization stuff:
+	// // Accelerometer initialization stuff:
 	initAccel(lsm_t); // "Turn on" all axes of the accel. Set up interrupts, etc.
 	setAccelODR(lsm_t,init_t->aODR); // Set the accel data rate.
 	setAccelScale(lsm_t,lsm_t->aScale); // Set the accel range.
 	
-	// Magnetometer initialization stuff:
+	// // Magnetometer initialization stuff:
 	initMag(lsm_t); // "Turn on" all axes of the mag. Set up interrupts, etc.
 	setMagODR(lsm_t,init_t->mODR); // Set the magnetometer output data rate.
 	setMagScale(lsm_t,lsm_t->mScale); // Set the magnetometer's range.
 	
-	// Once everything is initialized, return the WHO_AM_I registers we read:
+	// // Once everything is initialized, return the WHO_AM_I registers we read:
 	return (xmTest << 8) | gTest;
 }
 
@@ -142,8 +141,8 @@ void initGyro( LSM9DS0_t* lsm_t )
 	Out_Sel[1:0] - Out selection configuration */
 	gWriteByte(lsm_t, CTRL_REG5_G, 0x00);
 	
-	// Temporary !!! For testing !!! Remove !!! Or make useful !!!
-	configGyroInt(lsm_t,0x2A, 0, 0, 0, 0); // Trigger interrupt when above 0 DPS...
+	// TODO: Temporary !!! For testing !!! Remove !!! Or make useful !!!
+	// configGyroInt(lsm_t,0x2A, 0, 0, 0, 0); // Trigger interrupt when above 0 DPS...
 }
 
 
@@ -173,7 +172,6 @@ void initAccel(LSM9DS0_t* lsm_t)
 		0: Axis disabled, 1: Axis enabled									 */	
 	xmWriteByte(lsm_t,CTRL_REG1_XM, 0x57); // 100Hz data rate, x/y/z all enabled
 	
-	//Serial.println(xmReadByte(CTRL_REG1_XM));
 	/* CTRL_REG2_XM (0x21) (Default value: 0x00)
 	Bits (7-0): ABW1 ABW0 AFS2 AFS1 AFS0 AST1 AST0 SIM
 	ABW[1:0] - Accelerometer anti-alias filter bandwidth
@@ -190,7 +188,7 @@ void initAccel(LSM9DS0_t* lsm_t)
 	Bits (7-0): P1_BOOT P1_TAP P1_INT1 P1_INT2 P1_INTM P1_DRDYA P1_DRDYM P1_EMPTY
 	*/
 	// Accelerometer data ready on INT1_XM (0x04)
-	xmWriteByte(lsm_t,CTRL_REG3_XM, 0x04); 
+	// xmWriteByte(lsm_t,CTRL_REG3_XM, 0x04); 
 }
 
 
@@ -232,7 +230,7 @@ void initMag(LSM9DS0_t* lsm_t)
 	/* CTRL_REG4_XM is used to set interrupt generators on INT2_XM
 	Bits (7-0): P2_TAP P2_INT1 P2_INT2 P2_INTM P2_DRDYA P2_DRDYM P2_Overrun P2_WTM
 	*/
-	xmWriteByte(lsm_t,CTRL_REG4_XM, 0x04); // Magnetometer data ready on INT2_XM (0x08)
+	//xmWriteByte(lsm_t,CTRL_REG4_XM, 0x04); // Magnetometer data ready on INT2_XM (0x08)
 	
 	/* INT_CTRL_REG_M to set push-pull/open drain, and active-low/high
 	Bits[7:0] - XMIEN YMIEN ZMIEN PP_OD IEA IEL 4D MIEN
@@ -245,7 +243,7 @@ void initMag(LSM9DS0_t* lsm_t)
 	4D - 4D enable. 4D detection is enabled when 6D bit in INT_GEN1_REG is set
 	MIEN - Enable interrupt generation for magnetic data
 		0=disable, 1=enable) */
-	xmWriteByte(lsm_t,INT_CTRL_REG_M, 0x09); // Enable interrupts for mag, active-low, push-pull
+	// xmWriteByte(lsm_t,INT_CTRL_REG_M, 0x09); // Enable interrupts for mag, active-low, push-pull
 }
 
 // This is a function that uses the FIFO to accumulate sample of accelerometer and gyro data, average
@@ -541,7 +539,7 @@ void gWriteByte(LSM9DS0_t* lsm_t, uint8_t subAddress, uint8_t data)
 	// gyro-specific I2C address or SPI CS pin.
 	#if(LSM_I2C_SUPPORT==1)
 	if (lsm_t->interfaceMode == MODE_I2C)
-		I2CwriteByte(lsm_t->lsm_t->gAddress, subAddress, data);
+		I2CwriteByte(lsm_t->gAddress, subAddress, data);
 	else if (lsm_t->interfaceMode == MODE_SPI)
 	#endif
 		SPIwriteByte(lsm_t->gAddress, subAddress, data,'g');
@@ -564,9 +562,7 @@ uint8_t gReadByte(LSM9DS0_t* lsm_t, uint8_t subAddress)
 	// Whether we're using I2C or SPI, read a byte using the
 	// gyro-specific I2C address or SPI CS pin.
 	#if(LSM_I2C_SUPPORT==1)
-	if (lsm_t->interfaceMode == MODE_I2C)
 		return I2CreadByte(lsm_t->gAddress, subAddress);
-	else if (lsm_t->interfaceMode == MODE_SPI)
 	#endif
 		return SPIreadByte(lsm_t->gAddress, subAddress,'g');
 }
@@ -576,9 +572,9 @@ void gReadBytes(LSM9DS0_t* lsm_t, uint8_t subAddress, uint8_t * dest, uint8_t co
 	// Whether we're using I2C or SPI, read multiple bytes using the
 	// gyro-specific I2C address or SPI CS pin.
 	#if(LSM_I2C_SUPPORT==1)
-	if (lsm_t->interfaceMode == MODE_I2C)
+  if (lsm_t->interfaceMode == MODE_I2C)
 		I2CreadBytes(lsm_t->gAddress, subAddress, dest, count);
-	else if (lsm_t->interfaceMode == MODE_SPI)
+  else if (lsm_t->interfaceMode == MODE_SPI)
 	#endif
 		SPIreadBytes(lsm_t->gAddress, subAddress, dest, count,'g');
 }
@@ -588,9 +584,7 @@ uint8_t xmReadByte(LSM9DS0_t* lsm_t, uint8_t subAddress)
 	// Whether we're using I2C or SPI, read a byte using the
 	// accelerometer-specific I2C address or SPI CS pin.
 	#if(LSM_I2C_SUPPORT==1)
-	if (lsm_t->interfaceMode == MODE_I2C)
 		return I2CreadByte(lsm_t->xmAddress, subAddress);
-	else if (lsm_t->interfaceMode == MODE_SPI)
 	#endif
 		return SPIreadByte(lsm_t->xmAddress, subAddress,'a');
 }
@@ -611,7 +605,7 @@ void LSM_initSPI()
 {
 
 	/* Initialize SPI */
-	init_SPI();
+	init_SPI1();
 	
 	/* CS HIGH */
 	LSM_CSG_HIGH;
@@ -666,40 +660,71 @@ void SPIreadBytes(uint8_t csPin, uint8_t subAddress, uint8_t * dest, uint8_t cou
 #if(LSM_I2C_SUPPORT==1)
 void LSM_initI2C()
 {
-	//Wire.begin();	// Initialize I2C library
+	//Initialize I2C Connection
+  init_I2C1();
 }
 
-// Wire.h read and write protocols
 void I2CwriteByte(uint8_t address, uint8_t subAddress, uint8_t data)
 {
-	//Wire.beginTransmission(address);  // Initialize the Tx buffer
-	//Wire.write(subAddress);           // Put slave register address in Tx buffer
-	//Wire.write(data);                 // Put data in Tx buffer
-	//Wire.endTransmission();           // Send the Tx buffer
+	// Start Connection and send slave address
+  I2C_start(I2C1, address, I2C_Direction_Transmitter);
+  I2C_write(I2C1, subAddress); // Transmit the subAddress to be written to
+  I2C_write(I2C1, data);  // Transmit one byte to slave
+  I2C_stop(I2C1); // Close connection
 }
 
 uint8_t I2CreadByte(uint8_t address, uint8_t subAddress)
 {
 	uint8_t data; // `data` will store the register data	 
-	//Wire.beginTransmission(address);         // Initialize the Tx buffer
-	//Wire.write(subAddress);	                 // Put slave register address in Tx buffer
-	//Wire.endTransmission(false);             // Send the Tx buffer, but send a restart to keep connection alive
-	//Wire.requestFrom(address, (uint8_t) 1);  // Read one byte from slave register address 
-	//data = Wire.read();                      // Fill Rx buffer with result
-	return data;                             // Return data read from slave register
+	// Start Connection and send slave address
+  I2C_start(I2C1, address, I2C_Direction_Transmitter);
+  // Send sub-address
+  I2C_write(I2C1, subAddress);
+  // Start Reading
+  //I2C_stop(I2C1); // Close connection
+  // Generate a start 
+  I2C1->CR1 |= I2C_CR1_START;    
+  // Wait for start condition to end
+  while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT));
+  // Send slave Address for write 
+  I2C_Send7bitAddress(I2C1, address, I2C_Direction_Receiver);  
+  // Wait for ack 
+  while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+  data = I2C_read_nack(I2C1); // Read data
+	return data; // Return data read from slave register
 }
 
 void I2CreadBytes(uint8_t address, uint8_t subAddress, uint8_t * dest, uint8_t count)
 {  
-	//Wire.beginTransmission(address);   // Initialize the Tx buffer
-	// Next send the register to be read. OR with 0x80 to indicate multi-read.
-	//Wire.write(subAddress | 0x80);     // Put slave register address in Tx buffer
-	//Wire.endTransmission(false);       // Send the Tx buffer, but send a restart to keep connection alive
-	//uint8_t i = 0;
-	//Wire.requestFrom(address, count);  // Read bytes from slave register address 
-	//while (Wire.available()) 
-	//{
-	//	dest[i++] = Wire.read(); // Put read results in the Rx buffer
-	//}
+	// Start Connection and send slave address
+  I2C_start(I2C1, address, I2C_Direction_Transmitter);
+  // Set the MSB of the subAddress high to enable auto increment
+  I2C_write(I2C1, (subAddress | 0x80));
+  // Start signal generation enable
+  I2C1->CR1 |= I2C_CR1_START;    
+  // Wait for start condition to end
+  while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT));
+  // Send slave Address for write 
+  I2C_Send7bitAddress(I2C1, address, I2C_Direction_Receiver);  
+  // Wait for ack 
+  while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+  // Read count number of bytes 
+  int i;
+  for(i = 0; i < count; i++) {
+    if(i == count-1) {
+      dest[i] = I2C_read_nack(I2C1);
+    } else {
+      dest[i] = I2C_read_ack(I2C1);
+    }
+  }
 }
+
+// void I2CreadBytes(uint8_t address, uint8_t subAddress, uint8_t * dest, uint8_t count)
+// {  
+//   int i;
+//   for(i = 0; i < count; i++) {
+//     dest[i] = I2CreadByte(address, ((subAddress+1) << 1));
+//   }
+// }
+
 #endif

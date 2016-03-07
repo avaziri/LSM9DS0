@@ -8,17 +8,16 @@
 #include "stm32f4xx_gpio.h"
 #include "stm32f4xx_spi.h"
 #include "SPI.h"
+#include "I2C.h"
 
 
 #ifndef LSM_I2C_SUPPORT
-#define LSM_I2C_SUPPORT 	0
-///		Im porting this for SPI, only.
-///		For now and maybe forever
-///		Huck the Faters
-///		Sorry, not sorry
-///		#BlumpkinSpiceLatte
-///		Go ahead, make this 1
-///		I dare you...
+#define LSM_I2C_SUPPORT 	1
+/* I2C addresses */
+#define LSM_I2C_SDOG_HIGH_G_ADR    0xD6
+#define LSM_I2C_SDOG_LOW_G_ADR     0xD4
+#define LSM_I2C_SDXM_HIGH_XM_ADR   0x3A
+#define LSM_I2C_SDXM_LOW_XM_ADR    0x3C
 #endif
 
 
@@ -198,17 +197,17 @@ typedef enum gyro_odr_x
 // accel_oder defines all possible output data rates of the accelerometer:
 typedef enum accel_odr_x
 {
-	A_POWER_DOWN, 	// Power-down mode (0x0)
-	A_ODR_3125,		// 3.125 Hz	(0x1)
-	A_ODR_625,		// 6.25 Hz (0x2)
-	A_ODR_125,		// 12.5 Hz (0x3)
-	A_ODR_25,		// 25 Hz (0x4)
-	A_ODR_50,		// 50 Hz (0x5)
-	A_ODR_100,		// 100 Hz (0x6)
-	A_ODR_200,		// 200 Hz (0x7)
-	A_ODR_400,		// 400 Hz (0x8)
-	A_ODR_800,		// 800 Hz (9)
-	A_ODR_1600		// 1600 Hz (0xA)
+	A_POWER_DOWN  = 0x0, 	// Power-down mode (0x0)
+	A_ODR_3125    = 0x1,		// 3.125 Hz	(0x1)
+	A_ODR_625     = 0x2,		// 6.25 Hz (0x2)
+	A_ODR_125     = 0x3,		// 12.5 Hz (0x3)
+	A_ODR_25      = 0x4,		// 25 Hz (0x4)
+	A_ODR_50      = 0x5,		// 50 Hz (0x5)
+	A_ODR_100     = 0x6,		// 100 Hz (0x6)
+	A_ODR_200     = 0x7,		// 200 Hz (0x7)
+	A_ODR_400     = 0x8,		// 400 Hz (0x8)
+	A_ODR_800     = 0x9,		// 800 Hz (9)
+	A_ODR_1600    = 0xA,	// 1600 Hz (0xA)
 } accel_odr;
 
   // accel_abw defines all possible anti-aliasing filter rates of the accelerometer:
@@ -224,12 +223,12 @@ typedef enum accel_abw_x
 // mag_oder defines all possible output data rates of the magnetometer:
 typedef enum mag_odr_x
 {
-	M_ODR_3125,	// 3.125 Hz (0x00)
-	M_ODR_625,	// 6.25 Hz (0x01)
-	M_ODR_125,	// 12.5 Hz (0x02)
-	M_ODR_25,	// 25 Hz (0x03)
-	M_ODR_50,	// 50 (0x04)
-	M_ODR_100,	// 100 Hz (0x05)
+	M_ODR_3125  = 0x0,	// 3.125 Hz (0x00)
+	M_ODR_625   = 0x1,	// 6.25 Hz (0x01)
+	M_ODR_125   = 0x2,	// 12.5 Hz (0x02)
+	M_ODR_25    = 0x3,	// 25 Hz (0x03)
+	M_ODR_50    = 0x4,	// 50 (0x04)
+	M_ODR_100   = 0x5,	// 100 Hz (0x05)
 } mag_odr;
 
 
@@ -270,10 +269,9 @@ typedef struct LMS9DS0_x
 	int16_t mx; 
 	int16_t	my; 
 	int16_t	mz; // x, y, and z axis readings of the magnetometer
-    
-    int16_t temperature;
+  int16_t temperature;
 	float 	abias[3];
-    float 	gbias[3];
+  float 	gbias[3];
 
 } LSM9DS0_t;
 
@@ -537,8 +535,6 @@ void calcmRes( LSM9DS0_t* lsm_t );
 // This function will set the value of the aRes variable. aScale must
 // be set prior to calling this function.
 void calcaRes(  LSM9DS0_t* lsm_t );
-
-/// @todo ? needed ?
 
 ///////////////////
 // SPI Functions //

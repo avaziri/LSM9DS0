@@ -9,10 +9,10 @@
 #define OUT_Z_H_M 0x2D
 
 
-void init_SPI(void)
+void init_SPI1(void)
 {
-	uint16_t pinSources[3];
 	SPI_InitTypeDef SPI_InitStruct;
+  GPIO_InitTypeDef GPIO_InitStruct;
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
 	
 	// set to full duplex mode, seperate MOSI and MISO lines
@@ -30,14 +30,17 @@ void init_SPI(void)
   SPI_InitStruct.SPI_FirstBit = SPI_FirstBit_MSB;
   SPI_Init(SPI1, &SPI_InitStruct); 
 	
-	pinSources[0] = GPIO_PinSource5;
-	pinSources[1] = GPIO_PinSource6;
-	pinSources[2] = GPIO_PinSource7;
-	
-	init_GPIO_AF(GPIOA, RCC_AHB1Periph_GPIOA, GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7, GPIO_AF_SPI1, pinSources, 3);
-	init_GPIO(GPIOE, RCC_AHB1Periph_GPIOE, GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8, GPIO_Mode_OUT);
+  /* Connect pins to SPI SCK, MISO, MOSI to alternate function peripheral */
+  GPIO_PinAFConfig(GPIOA, GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7, GPIO_AF_SPI1);
 
-
+  /* setup SCK, MISO, MOSI pins */
+  GPIO_InitStruct.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
+  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;     // set pins to alternate function
+  GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;    // set GPIO speed
+  GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;     // SPI requires push pull
+  GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;     // enable pull up resistors
+  GPIO_Init(GPIOB, &GPIO_InitStruct);         // init GPIOB
+  
 	select_SPI_Channel(NONE);
 
 	// enable SPI1
@@ -50,24 +53,24 @@ void select_SPI_Channel(uint32_t channel)
 	{
 		case NONE:
 		{
-			set_GPIO_Pin(GPIOE, GPIO_Pin_6, 1);
-			set_GPIO_Pin(GPIOE, GPIO_Pin_7, 1);
-			set_GPIO_Pin(GPIOE, GPIO_Pin_8, 1);
+			GPIO_SetBits(GPIOE, GPIO_Pin_6);
+			GPIO_SetBits(GPIOE, GPIO_Pin_7);
+			GPIO_SetBits(GPIOE, GPIO_Pin_8);
 		}
 			break;
 		case DISP:
 		{
-			set_GPIO_Pin(GPIOE, GPIO_Pin_6, 0);
+			GPIO_SetBits(GPIOE, GPIO_Pin_6);
 		}
 			break;
 		case XM:
 		{
-			set_GPIO_Pin(GPIOE, GPIO_Pin_7, 0);
+			GPIO_SetBits(GPIOE, GPIO_Pin_7);
 		}
 			break;
 		case G:
 		{
-			set_GPIO_Pin(GPIOE, GPIO_Pin_8, 0);
+			GPIO_SetBits(GPIOE, GPIO_Pin_8);
 		}
 			break;
 	}
